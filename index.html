@@ -11,7 +11,7 @@
 </style>
 </head>
 <body>
-<header class="header"><div class="brand"><i>✦</i>Din Kostplan</div><a href="#formular">Kom i gang →</a></header><div role="note" style="padding:14px 7%;background:#e1eee5;color:#245447;font-weight:700">Demoversion – brug kun fiktive oplysninger. Formularen sender ikke data.</div>
+<header class="header"><div class="brand"><i>✦</i>Din Kostplan</div><a href="#formular">Kom i gang →</a></header><div role="note" style="padding:14px 7%;background:#e1eee5;color:#245447;font-weight:700">Demoversion – brug kun fiktive oplysninger. Testbesvarelser gemmes i en beskyttet database.</div>
 <main>
 <section class="hero"><div><div class="tag">Personlig kostplanlægger</div><h1>Madplanen, der passer til <em>dig.</em></h1><p>Udfyld formularen, så kan vi sammensætte en overskuelig kostplan, der passer til dine ønsker.</p><div class="checks"><span>✓ Tilpasset dig</span><span>✓ Nem at følge</span><span>✓ Med indkøbsliste</span></div></div><div class="art" aria-hidden="true"><div class="sun"></div><div class="plate"><i class="food f1"></i><i class="food f2"></i><i class="food f3"></i></div><i class="leaf l1"></i><i class="leaf l2"></i></div></section>
 <section class="section" id="formular"><div class="intro"><h2>Lad os finde den rigtige plan</h2><p>Udfyld felterne nedenfor. Det tager kun et øjeblik.</p></div>
@@ -24,17 +24,51 @@
 <label><span>Vægt <b>*</b></span><input name="weight" type="number" min="20" max="300" placeholder="70" required></label></div></div>
 <div class="card"><div class="cardhead"><div class="step">02</div><div><h3>Dine mål og vaner</h3><p class="sub">Vælg det, der passer bedst til dig</p></div></div><fieldset><legend>Aktivitetsniveau <b>*</b></legend><div class="choices"><label class="choice"><input type="radio" name="activity" value="low" required><span>Lavt<small>Primært stillesiddende</small></span></label><label class="choice"><input type="radio" name="activity" value="moderate"><span>Middel<small>Motion 1–3 gange om ugen</small></span></label><label class="choice"><input type="radio" name="activity" value="high"><span>Højt<small>Motion 4+ gange om ugen</small></span></label></div></fieldset><fieldset><legend>Dit mål <b>*</b></legend><div class="choices four"><label class="choice"><input type="radio" name="goal" value="weight_loss" required><span>Vægttab</span></label><label class="choice"><input type="radio" name="goal" value="muscle_gain"><span>Muskelopbygning</span></label><label class="choice"><input type="radio" name="goal" value="maintain"><span>Vedligehold af vægt</span></label><label class="choice"><input type="radio" name="goal" value="healthy"><span>Sund livsstil</span></label></div></fieldset></div>
 <div class="card"><div class="cardhead"><div class="step">03</div><div><h3>Din kostplan</h3><p class="sub">Tilpas planen efter dine ønsker</p></div></div><div class="fields"><label><span>Ønsket kalorieindtag <b>*</b></span><select name="calories" required><option value="">Vælg kalorieindtag</option><option>1200 kcal</option><option>1600 kcal</option><option>2000 kcal</option></select></label><label><span>Antal måltider pr. dag <b>*</b></span><select name="meals" required><option value="">Vælg antal måltider</option><option>4 måltider</option><option>5 måltider</option><option>6 måltider</option></select></label></div><fieldset><legend>Eventuelle allergier</legend><div class="toggles"><label class="toggle"><input name="allergies" type="checkbox" value="Gluten"> Gluten</label><label class="toggle"><input name="allergies" type="checkbox" value="Laktose"> Laktose</label></div></fieldset><div class="yesno"><fieldset><legend>Drikker du kaffe med mælk?</legend><div class="seg"><label><input type="radio" name="coffee" value="ja"><span>Ja</span></label><label><input type="radio" name="coffee" value="nej" checked><span>Nej</span></label></div></fieldset><fieldset><legend>Ønsker du alkohol på planen?</legend><div class="seg"><label><input type="radio" name="alcohol" value="ja"><span>Ja</span></label><label><input type="radio" name="alcohol" value="nej" checked><span>Nej</span></label></div></fieldset></div></div>
-<div class="gdpr"><h4>Privatliv i demonstrationsversionen</h4><label><input id="consent" name="consent" type="checkbox" required><span>Jeg forstår, at dette er en demo. Jeg bruger kun fiktive oplysninger, og intet sendes eller gemmes.</span></label><p class="privacy-note" id="privatliv">Oplysningerne vises kun i felterne, mens siden er åben. Når du lukker siden, bliver de ikke gemt af denne demo.</p></div>
-<div class="send"><p>Test formularen med fiktive oplysninger. Intet bliver sendt videre.</p><button class="button" type="submit">Afprøv formularen →</button></div><div class="success" id="success" hidden></div>
+<div class="gdpr"><h4>Privatliv i demonstrationsversionen</h4><label><input id="consent" name="consent" type="checkbox" required><span>Jeg forstår, at dette er en test. Jeg bruger kun fiktive oplysninger, som sendes til projektets database og kan ses af den ansvarlige for testen.</span></label><p class="privacy-note" id="privatliv">Testbesvarelser gemmes i Supabase og bruges kun til at afprøve formularen og administrationssiden. De slettes manuelt efter testen. Brug ikke rigtige personoplysninger.</p></div>
+<div class="send"><p>Test med fiktive oplysninger. Besvarelsen gemmes og vises i det beskyttede administrationsmodul.</p><button class="button" type="submit">Send testbesvarelse →</button></div><div class="success" id="success" hidden></div>
 </form></section></main><footer><span>© 2026 Din Kostplan</span><span>En enklere vej til en sundere hverdag</span></footer>
 <script>
-document.querySelector('#form').addEventListener('submit', function(event) {
+const PROJECT_URL = 'https://upgjngloxvdbthxwdgxb.supabase.co';
+const PUBLISHABLE_KEY = 'sb_publishable_USLUPo25xTukwhm2H0hgog_nXQJx9nZ';
+const form = document.querySelector('#form');
+const button = form.querySelector('button[type="submit"]');
+const message = document.querySelector('#success');
+form.addEventListener('submit', async event => {
   event.preventDefault();
-  if (!this.checkValidity()) { this.reportValidity(); return; }
-  const message = document.querySelector('#success');
-  message.textContent = 'Tak for testen. Formularen virker, men denne demo sender eller gemmer ingen oplysninger.';
-  message.hidden = false;
-  message.scrollIntoView({behavior:'smooth',block:'center'});
+  if (!form.checkValidity()) { form.reportValidity(); return; }
+  const data = new FormData(form);
+  const answer = {
+    name: String(data.get('name')).trim(), email: String(data.get('email')).trim(),
+    age: Number(data.get('age')), height: Number(data.get('height')),
+    weight: Number(data.get('weight')), activity: data.get('activity'),
+    goal: data.get('goal'), calories: parseInt(data.get('calories'), 10),
+    meals: parseInt(data.get('meals'), 10), allergies: data.getAll('allergies'),
+    coffee: data.get('coffee'), alcohol: data.get('alcohol')
+  };
+  button.disabled = true;
+  button.textContent = 'Sender…';
+  message.hidden = true;
+  try {
+    const response = await fetch(PROJECT_URL + '/rest/v1/kostplan_submissions', {
+      method: 'POST',
+      headers: { apikey: PUBLISHABLE_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(answer)
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    message.textContent = 'Tak! Din fiktive testbesvarelse er gemt og kan ses i administrationsmodulet.';
+    message.style.background = '#e8f3e9';
+    message.style.color = '#28533d';
+    form.reset();
+  } catch (error) {
+    message.textContent = 'Besvarelsen blev ikke gemt. Prøv igen senere. Du kan tjekke forbindelsen og sende et skærmbillede af denne fejl: ' + error.message;
+    message.style.background = '#fce9e4';
+    message.style.color = '#833928';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Send testbesvarelse →';
+    message.hidden = false;
+    message.scrollIntoView({behavior:'smooth',block:'center'});
+  }
 });
 </script>
 </body></html>
