@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kostplan – administration af testbesvarelser</title>
+<style>
+:root{--green:#356557;--ink:#24342f;--cream:#fbf8f2;--line:#d9e5dd;--coral:#dd8067}*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 system-ui,Arial,sans-serif}header{background:white;border-bottom:1px solid var(--line);padding:20px max(24px,calc((100vw - 1100px)/2))}header strong{font:700 24px Georgia,serif;color:var(--green)}main{max-width:1100px;margin:45px auto;padding:0 20px}h1{font:700 clamp(32px,5vw,46px)/1.1 Georgia,serif;margin:0 0 10px}p{color:#5d6e65}a{color:var(--green)}.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:28px;margin:24px 0;box-shadow:0 14px 30px #294f3b0b}.login{max-width:460px}label{display:block;font-weight:700;margin:16px 0 5px}input,select{font:inherit;border:1px solid #cddbd0;border-radius:8px;padding:11px 12px;background:#fff;color:var(--ink)}input{width:100%}button{background:var(--green);border:0;border-radius:8px;color:white;font:700 15px system-ui;padding:12px 20px;cursor:pointer;margin-top:20px}button:disabled{opacity:.55;cursor:wait}.secondary{background:#eef3ed;color:var(--green);margin-left:8px}.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.toolbar p{margin-right:auto}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}.answer{margin:0;padding:20px;border:1px solid var(--line);border-radius:12px;background:#fff}.answer h2{font-size:20px;margin:0}.answer time{font-size:13px;color:#6b7a70}dl{display:grid;grid-template-columns:45% 55%;gap:7px 4px;font-size:14px}dt{color:#67786d}dd{margin:0;overflow-wrap:anywhere}.notice{padding:12px 15px;border-radius:8px;background:#e8f3e9;color:#28533d}.notice.error{background:#fce9e4;color:#833928}.answer label{font-size:14px}.answer select{width:100%}[hidden]{display:none!important}
+</style>
+</head><body>
+<header><strong>Din Kostplan · Administration</strong></header>
+<main><h1>Testbesvarelser</h1><p>Her vises de fiktive besvarelser, der er sendt fra landingssiden. Kun en godkendt administrator kan se dem.</p>
+<section id="login-panel" class="panel login"><h2>Log ind</h2><form id="login-form"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required><label for="password">Adgangskode</label><input id="password" type="password" autocomplete="current-password" required><button type="submit">Log ind</button></form></section>
+<section id="dashboard" hidden><div class="toolbar"><p id="count"></p><button id="refresh" type="button">Opdater</button><button id="logout" class="secondary" type="button">Log ud</button></div><div id="answers" class="grid"></div></section>
+<p id="notice" class="notice" role="status" hidden></p>
+<p>Demoversion: Brug kun fiktive oplysninger. Slet testbesvarelser i Supabase, når testen er slut.</p></main>
+<script>
+const PROJECT_URL = 'https://upgjngloxvdbthxwdgxb.supabase.co';
+const PUBLISHABLE_KEY = 'sb_publishable_USLUPo25xTukwhm2H0hgog_nXQJx9nZ';
+const labels = {name:'Navn',email:'E-mail',age:'Alder',height:'Højde (cm)',weight:'Vægt (kg)',activity:'Aktivitetsniveau',goal:'Mål',calories:'Kalorier',meals:'Måltider pr. dag',allergies:'Allergier',coffee:'Kaffe med mælk',alcohol:'Alkohol'};
+const friendly = {low:'Lav',moderate:'Middel',high:'Høj',weight_loss:'Vægttab',muscle_gain:'Muskelopbygning',maintain:'Vedligehold af vægt',healthy:'Sund livsstil',ja:'Ja',nej:'Nej'};
+let token = null;
+const notice = document.querySelector('#notice');
+function show(text, error=false) {notice.textContent=text;notice.classList.toggle('error',error);notice.hidden=!text;}
+function headers(json=false){return {apikey:PUBLISHABLE_KEY,Authorization:'Bearer '+token,...(json?{'Content-Type':'application/json'}:{})};}
+async function api(path,options={}){
+  const response=await fetch(PROJECT_URL+path,{...options,headers:{...headers(Boolean(options.body)),...(options.headers||{})}});
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  return response.status===204?null:response.json();
+}
+const login=document.querySelector('#login-form');
+login.addEventListener('submit',async event=>{
+  event.preventDefault();show('');const button=login.querySelector('button');button.disabled=true;
+  try{
+    const response=await fetch(PROJECT_URL+'/auth/v1/token?grant_type=password',{
+      method:'POST',headers:{apikey:PUBLISHABLE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email:document.querySelector('#email').value,password:document.querySelector('#password').value})
+    });
+    if(!response.ok)throw new Error('Tjek e-mail og adgangskode.');
+    const session=await response.json();token=session.access_token;
+    const allowed=await api('/rest/v1/rpc/is_kostplan_admin',{method:'POST',body:'{}'});
+    if(allowed!==true)throw new Error('Denne bruger har ikke administratoradgang endnu.');
+    document.querySelector('#password').value='';document.querySelector('#login-panel').hidden=true;
+    document.querySelector('#dashboard').hidden=false;await loadAnswers();
+  }catch(error){token=null;document.querySelector('#login-panel').hidden=false;document.querySelector('#dashboard').hidden=true;show(error.message,true)}
+  finally{button.disabled=false}
+});
+function field(label,value){const dt=document.createElement('dt');dt.textContent=label;const dd=document.createElement('dd');dd.textContent=Array.isArray(value)?(value.join(', ')||'Ingen'):(friendly[value]||String(value??''));return [dt,dd]}
+async function loadAnswers(){
+  try{
+    const rows=await api('/rest/v1/kostplan_submissions?select=*&order=submitted_at.desc&limit=200');
+    const area=document.querySelector('#answers');area.replaceChildren();
+    document.querySelector('#count').textContent=rows.length+' testbesvarelser (maks. 200 vises)';
+    if(!rows.length){const p=document.createElement('p');p.textContent='Ingen testbesvarelser endnu.';area.append(p)}
+    for(const row of rows){
+      const card=document.createElement('article');card.className='answer';
+      const title=document.createElement('h2');title.textContent=row.name;card.append(title);
+      const time=document.createElement('time');time.textContent=new Date(row.submitted_at).toLocaleString('da-DK');card.append(time);
+      const dl=document.createElement('dl');
+      for(const [key,label] of Object.entries(labels))dl.append(...field(label,row[key]));card.append(dl);
+      const label=document.createElement('label');label.textContent='Status';
+      const select=document.createElement('select');
+      for(const [value,text] of [['received','Modtaget'],['working','Under behandling'],['done','Afsluttet']]){
+        const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option)
+      }
+      select.value=row.status;select.addEventListener('change',async()=>{
+        select.disabled=true;
+        try{await api('/rest/v1/kostplan_submissions?id=eq.'+encodeURIComponent(row.id),{method:'PATCH',body:JSON.stringify({status:select.value}),headers:{Prefer:'return=minimal'}});row.status=select.value;show('Status er gemt.')}
+        catch(error){select.value=row.status;show('Status kunne ikke gemmes: '+error.message,true)}
+        finally{select.disabled=false}
+      });label.append(select);card.append(label);area.append(card)
+    }
+  }catch(error){show('Kunne ikke hente besvarelser: '+error.message,true)}
+}
+document.querySelector('#refresh').addEventListener('click',loadAnswers);
+document.querySelector('#logout').addEventListener('click',()=>{token=null;document.querySelector('#dashboard').hidden=true;document.querySelector('#login-panel').hidden=false;document.querySelector('#answers').replaceChildren();show('Du er logget ud.')});
+</script></body></html>
