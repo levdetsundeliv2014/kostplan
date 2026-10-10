@@ -1,76 +1,336 @@
-<!doctype html>
-<html lang="da">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kostplan – administration af testbesvarelser</title>
-<style>
-:root{--green:#356557;--ink:#24342f;--cream:#fbf8f2;--line:#d9e5dd;--coral:#dd8067}*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 system-ui,Arial,sans-serif}header{background:white;border-bottom:1px solid var(--line);padding:20px max(24px,calc((100vw - 1100px)/2))}header strong{font:700 24px Georgia,serif;color:var(--green)}main{max-width:1100px;margin:45px auto;padding:0 20px}h1{font:700 clamp(32px,5vw,46px)/1.1 Georgia,serif;margin:0 0 10px}p{color:#5d6e65}a{color:var(--green)}.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:28px;margin:24px 0;box-shadow:0 14px 30px #294f3b0b}.login{max-width:460px}label{display:block;font-weight:700;margin:16px 0 5px}input,select{font:inherit;border:1px solid #cddbd0;border-radius:8px;padding:11px 12px;background:#fff;color:var(--ink)}input{width:100%}button{background:var(--green);border:0;border-radius:8px;color:white;font:700 15px system-ui;padding:12px 20px;cursor:pointer;margin-top:20px}button:disabled{opacity:.55;cursor:wait}.secondary{background:#eef3ed;color:var(--green);margin-left:8px}.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.toolbar p{margin-right:auto}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}.answer{margin:0;padding:20px;border:1px solid var(--line);border-radius:12px;background:#fff}.answer h2{font-size:20px;margin:0}.answer time{font-size:13px;color:#6b7a70}dl{display:grid;grid-template-columns:45% 55%;gap:7px 4px;font-size:14px}dt{color:#67786d}dd{margin:0;overflow-wrap:anywhere}.notice{padding:12px 15px;border-radius:8px;background:#e8f3e9;color:#28533d}.notice.error{background:#fce9e4;color:#833928}.answer label{font-size:14px}.answer select{width:100%}[hidden]{display:none!important}
-</style>
-</head><body>
-<header><strong>Din Kostplan · Administration</strong></header>
-<main><h1>Testbesvarelser</h1><p>Her vises de fiktive besvarelser, der er sendt fra landingssiden. Kun en godkendt administrator kan se dem.</p>
-<section id="login-panel" class="panel login"><h2>Log ind</h2><form id="login-form"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required><label for="password">Adgangskode</label><input id="password" type="password" autocomplete="current-password" required><button type="submit">Log ind</button></form></section>
-<section id="dashboard" hidden><div class="toolbar"><p id="count"></p><button id="refresh" type="button">Opdater</button><button id="logout" class="secondary" type="button">Log ud</button></div><div id="answers" class="grid"></div></section>
-<p id="notice" class="notice" role="status" hidden></p>
-<p>Demoversion: Brug kun fiktive oplysninger. Slet testbesvarelser i Supabase, når testen er slut.</p></main>
+<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Indsendte kostplanformularer – Administration</title><style>
+:root{--green:#356557;--ink:#24342f;--cream:#fbf8f2;--line:#d9e5dd;--coral:#dd8067}*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:15px/1.45 Arial,sans-serif;padding:32px}h1{color:var(--green);margin:0;font-size:32px}p{color:#5d6e65}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:20px}a{color:var(--green);font-weight:bold}button{border:0;border-radius:7px;background:var(--coral);color:white;padding:11px 15px;font-weight:700;cursor:pointer}button.secondary{background:var(--green)}button:disabled{opacity:.6;cursor:wait}.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.status-guide{padding:14px 16px;background:#e1eee5;color:var(--green);border-radius:8px;margin:18px 0}.status-guide strong{margin-right:12px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:9px;background:#fff}table{border-collapse:collapse;min-width:1500px;width:100%}th,td{border:1px solid var(--line);padding:11px;text-align:left;vertical-align:top}th{background:#e1eee5;color:var(--green)}td{white-space:nowrap}td.name{white-space:normal;min-width:150px}.status{min-width:185px}select,input{font:inherit;border:1px solid var(--line);border-radius:7px;padding:9px;background:white;color:var(--ink)}.login{max-width:450px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:28px}.login label{display:block;margin:15px 0 5px;font-weight:bold}.login input{width:100%}.login button{margin-top:22px}.actions{display:flex;gap:8px;align-items:center}.action-cell{min-width:275px}.notice{padding:15px;border-radius:8px;background:#e8f3e9;color:#28533d;margin:18px 0}.notice.error{background:#fce9e4;color:#833928}.empty{padding:26px;border:1px solid var(--line);background:#fff}.foot{margin-top:25px;font-size:13px}#preview{margin:26px 0}#preview iframe{width:100%;height:850px;border:1px solid var(--line);background:#fff}@media(max-width:650px){body{padding:18px}.top{align-items:flex-start;flex-direction:column}}
+</style></head><body>
+<section id="login-panel" class="login"><h1>Administration</h1><p>Log ind for at se testbesvarelser.</p><form id="login-form"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required><label for="password">Adgangskode</label><input id="password" type="password" autocomplete="current-password" required><button type="submit">Log ind</button></form></section>
+<section id="dashboard" hidden><div class="top"><div><h1>Indsendte kostplanformularer</h1><p id="count">Indlæser…</p></div><div class="toolbar"><a href="./">Åbn landingpage</a><button id="refresh" class="secondary" type="button">Opdater indsendelser</button><button id="logout" class="secondary" type="button">Log ud</button></div></div><div class="status-guide"><strong>Status:</strong> Modtaget → Kostplan genereret → Kostplan sendt</div><div id="content"></div><div id="preview"></div><p class="foot">Prøveversion: Kun fiktive data. En statusændring til “Kostplan sendt” udsender ikke en e-mail. Gennemse altid planen, før den bruges.</p></section>
+<div id="adminNotice" class="notice" role="status" hidden></div>
 <script>
-const PROJECT_URL = 'https://upgjngloxvdbthxwdgxb.supabase.co';
-const PUBLISHABLE_KEY = 'sb_publishable_USLUPo25xTukwhm2H0hgog_nXQJx9nZ';
-const labels = {name:'Navn',email:'E-mail',age:'Alder',height:'Højde (cm)',weight:'Vægt (kg)',activity:'Aktivitetsniveau',goal:'Mål',calories:'Kalorier',meals:'Måltider pr. dag',allergies:'Allergier',coffee:'Kaffe med mælk',alcohol:'Alkohol'};
-const friendly = {low:'Lav',moderate:'Middel',high:'Høj',weight_loss:'Vægttab',muscle_gain:'Muskelopbygning',maintain:'Vedligehold af vægt',healthy:'Sund livsstil',ja:'Ja',nej:'Nej'};
-let token = null;
-const notice = document.querySelector('#notice');
-function show(text, error=false) {notice.textContent=text;notice.classList.toggle('error',error);notice.hidden=!text;}
-function headers(json=false){return {apikey:PUBLISHABLE_KEY,Authorization:'Bearer '+token,...(json?{'Content-Type':'application/json'}:{})};}
+const PROJECT_URL='https://upgjngloxvdbthxwdgxb.supabase.co';
+const PUBLISHABLE_KEY='sb_publishable_USLUPo25xTukwhm2H0hgog_nXQJx9nZ';
+let token=null,rows=[];
+function readRows(){return rows}
+function headers(json=false){return {apikey:PUBLISHABLE_KEY,Authorization:'Bearer '+token,...(json?{'Content-Type':'application/json'}:{})}}
 async function api(path,options={}){
-  const response=await fetch(PROJECT_URL+path,{...options,headers:{...headers(Boolean(options.body)),...(options.headers||{})}});
-  if(!response.ok)throw new Error('HTTP '+response.status);
-  return response.status===204?null:response.json();
+ const response=await fetch(PROJECT_URL+path,{...options,headers:{...headers(Boolean(options.body)),...(options.headers||{})}});
+ if(!response.ok){let error='HTTP '+response.status;try{const info=await response.json();if(info.message)error+=': '+info.message}catch{}throw new Error(error)}
+ return response.status===204?null:response.json();
 }
-const login=document.querySelector('#login-form');
-login.addEventListener('submit',async event=>{
-  event.preventDefault();show('');const button=login.querySelector('button');button.disabled=true;
-  try{
-    const response=await fetch(PROJECT_URL+'/auth/v1/token?grant_type=password',{
-      method:'POST',headers:{apikey:PUBLISHABLE_KEY,'Content-Type':'application/json'},
-      body:JSON.stringify({email:document.querySelector('#email').value,password:document.querySelector('#password').value})
-    });
-    if(!response.ok)throw new Error('Tjek e-mail og adgangskode.');
-    const session=await response.json();token=session.access_token;
-    const allowed=await api('/rest/v1/rpc/is_kostplan_admin',{method:'POST',body:'{}'});
-    if(allowed!==true)throw new Error('Denne bruger har ikke administratoradgang endnu.');
-    document.querySelector('#password').value='';document.querySelector('#login-panel').hidden=true;
-    document.querySelector('#dashboard').hidden=false;await loadAnswers();
-  }catch(error){token=null;document.querySelector('#login-panel').hidden=false;document.querySelector('#dashboard').hidden=true;show(error.message,true)}
-  finally{button.disabled=false}
+async function patchRow(row,changes){
+ await api('/rest/v1/kostplan_submissions?id=eq.'+encodeURIComponent(row.id),{method:'PATCH',body:JSON.stringify(changes),headers:{Prefer:'return=minimal'}});
+ Object.assign(row,changes);
+}
+async function loadRows(){
+ try{rows=await api('/rest/v1/kostplan_submissions?select=*&order=submitted_at.desc&limit=200');render();notice('')}
+ catch(error){notice('Kunne ikke hente besvarelser: '+error.message,true)}
+}
+const labels={name:'Navn',email:'E-mail',age:'Alder',height:'Højde',weight:'Vægt',activity:'Aktivitet',goal:'Mål',calories:'Kalorier',meals:'Måltider',supermarket:'Supermarked',allergy:'Allergier',coffee:'Kaffe',alcohol:'Alkohol',submitted_at:'Modtaget',status:'Status'};
+const pretty={low:'Lavt',moderate:'Middel',high:'Højt',weight_loss:'Vægttab',muscle_gain:'Muskelopbygning',maintain:'Vedligehold',rema_1000:'REMA 1000',netto:'Netto',lidl:'Lidl',coop365:'Coop 365',received:'Modtaget',in_progress:'Modtaget',ready:'Kostplan genereret',completed:'Kostplan sendt',1:'Ja',0:'Nej'};
+function display(value){if(Array.isArray(value))return value.join(', ');return pretty[value]||value||'–'}
+function escapeHtml(value){return String(value).replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]))}
+function allergyInfo(row){
+ const own=(key)=>Object.prototype.hasOwnProperty.call(row,key);
+ const names=['allergy','allergies','allergy[]','allergies[]','allergier'];
+ const values=[];
+ let known=false,unreadable=false;
+ function add(value){
+   if(value===null||value===undefined)return;
+   if(Array.isArray(value)){known=true;value.forEach(add);return}
+   if(typeof value==='object'){
+     for(const [name,checked] of Object.entries(value)){
+       if([true,1,'1','true','on','ja'].includes(checked)){known=true;add(name)}
+       else if([false,0,'0','false','off','nej'].includes(checked))known=true;
+       else unreadable=true;
+     }
+     return;
+   }
+   const text=String(value).trim();
+   if(!text)return;
+   if(text.startsWith('[')||text.startsWith('{')){try{add(JSON.parse(text));return}catch(error){unreadable=true;return}}
+   if(/^(ingen|ingen allergier|ingen oplyst|none|nej|false|0)$/i.test(text)){known=true;return}
+   if(/^(true|ja|on|1|[-–])$/i.test(text)){unreadable=true;return}
+   known=true;
+   for(const part of text.split(/[,;|]/).map(s=>s.trim()).filter(Boolean)){
+     if(/^gluten(?:allergi)?$/i.test(part))values.push('Gluten');
+     else if(/^(laktose|lactose)(?:intolerans)?$/i.test(part))values.push('Laktose');
+     else values.push(part);
+   }
+ }
+ // Et bekræftet adminvalg har forrang; de oprindelige formularfelter bevares.
+ if(row.allergy_record){
+   if(row.allergy_record.known===true)add(row.allergy_record.values);
+ }else{
+   names.filter(own).forEach(key=>add(row[key]));
+   ['gluten','laktose','lactose'].filter(own).forEach(key=>{
+     if([true,1,'1','true','on','ja'].includes(row[key])){known=true;add(key)}
+   });
+ }
+ return {known:known&&!unreadable,values:[...new Set(values)].sort()};
+}
+function allergyLabel(row){const info=allergyInfo(row);return !info.known?'Allergioplysninger mangler - skal afklares':info.values.length?info.values.join(', '):'Ingen allergier oplyst'}
+function allergyControl(row){
+ const info=allergyInfo(row),value=!info.known?'unknown':info.values.length?info.values.join('|'):'none';
+ const choices=[['unknown','Skal afklares'],['none','Ingen allergier oplyst'],['Gluten','Gluten'],['Laktose','Laktose'],['Gluten|Laktose','Gluten og laktose']];
+ if(!choices.some(c=>c[0]===value))choices.push([value,info.values.join(', ')]);
+ return '<select class="allergy-select" aria-label="Allergier for '+escapeHtml(row.name||'kunde')+'" data-id="'+escapeHtml(row.id)+'">'+choices.map(([v,label])=>'<option value="'+escapeHtml(v)+'" '+(v===value?'selected':'')+'>'+escapeHtml(label)+'</option>').join('')+'</select>';
+}
+function requireAllergyCheck(row){
+ const info=allergyInfo(row);
+ if(!info.known)throw new Error('Allergioplysningerne mangler eller er uklare. Afklar kundens valg og ret allergifeltet i tabellen.');
+ if(info.values.some(value=>value!=='Gluten'))throw new Error('Registreret: '+info.values.join(', ')+'. De nuværende opskrifter er ikke tilpasset dette valg. Generering og PDF-visning er stoppet, indtil opskrifterne er tilpasset.');
+}
+function notice(message,error=false){
+ const box=document.querySelector('#adminNotice');
+ box.textContent=message;box.hidden=!message;box.classList.toggle('error',error);box.setAttribute('role',error?'alert':'status');
+}
+function profileSignature(row){return JSON.stringify([String(row.id),row.name,row.email,row.age,row.height,row.weight,row.activity,row.goal,Number(row.calories),Number(row.meals),selectedDrink(row,'coffee'),selectedDrink(row,'alcohol'),row.supermarket,allergyInfo(row)])}
+function statusControl(row){const status=row.status==='in_progress'?'received':row.status||'received';return '<select class="status" aria-label="Status for '+escapeHtml(row.name||'kunde')+'" data-id="'+escapeHtml(row.id)+'"><option value="received" '+(status==='received'?'selected':'')+'>Modtaget</option><option value="ready" '+(status==='ready'?'selected':'')+'>Kostplan genereret</option><option value="completed" '+(status==='completed'?'selected':'')+'>Kostplan sendt</option></select>'}
+const PLAN_VERSION=7;
+const generationErrors=new Map();
+const FCDB={"havregryn":{"id":59,"name":"Havregryn, uspec.","kcal":366.447999364373},"bær":{"id":1,"name":"Jordbær, rå","kcal":38.4579487179487},"skyr":{"id":1693,"name":"Skyr, 0.2 % fedt","kcal":69.9796164383562},"rugbrød":{"id":1670,"name":"Rugbrød, mørkt, industrifremstillet","kcal":198.147333333333},"æg":{"id":1663,"name":"Æg, høne, frilands høns, rå","kcal":136.997490196078},"tomat":{"id":52,"name":"Tomat, uspec., rå","kcal":20.6611503770095},"spinat":{"id":50,"name":"Spinat, rå","kcal":24.4444444444444},"olie":{"id":1483,"name":"Rapsolie","kcal":900},"yoghurt naturel":{"id":1597,"name":"Yoghurt naturel, 1.5 % fedt","kcal":47.6},"banan":{"id":3,"name":"Banan, rå","kcal":93.4754660894661},"agurk":{"id":388,"name":"Agurk, rå","kcal":11.8530289193303},"kikærter, drænet":{"id":1812,"name":"Kikærter, lyse, kogte, konserves","kcal":113.1},"kylling":{"id":795,"name":"Kylling, kød, rå","kcal":127.906862745098},"kyllingebryst":{"id":795,"name":"Kylling, kød, rå","kcal":127.906862745098},"salat":{"id":479,"name":"Salat, Iceberg, rå","kcal":15.8337876470588},"makrel i tomat":{"id":960,"name":"Makrel i tomat, konserves","kcal":153.663333333333},"kogte linser":{"id":1807,"name":"Linser, grønne, kogte, konserves","kcal":90.28},"fuldkornspasta, tør vægt":{"id":305,"name":"Pasta, rå","kcal":361.4},"kidneybønner, drænet":{"id":1810,"name":"Bønner, røde kidney, kogte, konserves","kcal":94.56},"tilberedt kylling":{"id":795,"name":"Kylling, kød, rå","kcal":127.906862745098},"kartofler":{"id":4,"name":"Kartoffel, uspec., rå","kcal":77.039895187265},"broccoli":{"id":17,"name":"Broccoli, rå","kcal":35.1913157894737},"laks":{"id":1658,"name":"Laks, atlantisk, opdræt, rå","kcal":228.316666666667},"fuldkornsris, tør vægt":{"id":156,"name":"Ris, brune, rå","kcal":357.871428571429},"kalkun":{"id":732,"name":"Kalkun, kød, rå","kcal":105.1625},"hvid fisk":{"id":72,"name":"Torsk, filet, rå","kcal":75.2710052826006},"gulerødder":{"id":24,"name":"Gulerod, uspec., rå","kcal":36.1258343672457},"gulerod":{"id":24,"name":"Gulerod, uspec., rå","kcal":36.1258343672457},"rodfrugter":{"id":1827,"name":"Rodfrugter, dybfrost","kcal":25.96},"magert oksekød":{"id":818,"name":"Oksekød, uspec., helt magert, råt","kcal":124.7},"peberfrugt":{"id":38,"name":"Peberfrugt, rød, rå","kcal":31.4552456239413},"tomater":{"id":52,"name":"Tomat, uspec., rå","kcal":20.6611503770095},"cherrytomater":{"id":52,"name":"Tomat, uspec., rå","kcal":20.6611503770095},"æble":{"id":2,"name":"Æble, uspec., råt","kcal":55.0647335074677},"pære":{"id":9,"name":"Pære, rå","kcal":49.2155233602875},"græskarkerner":{"id":1507,"name":"Græskarkerner, tørret","kcal":567.75},"valnødder":{"id":647,"name":"Valnød, tørret","kcal":693.002857142857},"appelsin":{"id":70,"name":"Appelsin, rå","kcal":48.5601555837646},"mandler":{"id":35,"name":"Mandel, rå","kcal":606.4},"peanutbutter":{"id":1162,"name":"Jordnøddesmør","kcal":636.9},"knækbrød":{"id":375,"name":"Knækbrød, rug-, groft","kcal":343.363571428571},"riskiks":{"id":1748,"name":"Riskiks/riskage, poppede brune ris","kcal":375.6},"avocado":{"id":616,"name":"Avocado, rå","kcal":155.0075},"chokolade":{"id":1022,"name":"Chokolade, mørk","kcal":549.2},"minimælk":{"id":1066,"name":"Minimælk, 0.5 % fedt","kcal":37.206},"vin":{"id":213,"name":"Rødvin, uspec.","kcal":77.3},"kaffe":{"id":142,"name":"Kaffe, drikkeklar","kcal":1.14},"vand":{"id":0,"name":"Vand","kcal":0}};
+const days=['Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag','Søndag'];
+// FCDB 6.1, Data_Table, Energi (kcal) pr. 100 g. FoodID og præcist navn følger hver værdi.
+// Generiske varer (fx fuldkornspasta) bruger den angivne FCDB-reference; kontrollér produktetiketten ved udsendelse.
+function dish(name,slot,ingredients,method){return [name,slot,null,ingredients,method]}
+const breakfasts=[
+ dish('Havregrød på vand med bær','Morgenmad','50 g havregryn · 200 ml vand · 100 g bær','Kog havregryn i vand og læg bær på.'),
+ dish('Skyr med bær og havregryn','Morgenmad','200 g skyr · 100 g bær · 35 g havregryn','Kom bær og havregryn på skyr.'),
+ dish('Æg på rugbrød med tomat','Morgenmad','110 g æg · 80 g rugbrød · 75 g tomat','Kog æg og servér med rugbrød og tomat.'),
+ dish('Havregrød på vand med bær','Morgenmad','50 g havregryn · 200 ml vand · 100 g bær','Kog havregryn i vand og læg bær på.'),
+ dish('Skyr med bær og havregryn','Morgenmad','200 g skyr · 100 g bær · 35 g havregryn','Kom bær og havregryn på skyr.'),
+ dish('Omelet med spinat','Morgenmad','110 g æg · 80 g spinat · 60 g tomat · 5 g olie','Steg omelet med grøntsager.'),
+ dish('Yoghurt med banan og havregryn','Morgenmad','200 g yoghurt naturel · 100 g banan · 40 g havregryn','Anret yoghurt med banan og havregryn.')
+];
+const lunches=[
+ dish('Rugbrødsmadder med æg og grønt','Frokost','80 g rugbrød · 110 g æg · 50 g agurk · 50 g tomat','Kog æg og fordel på brødet med grønt.'),
+ dish('Hjemmelavet kikærtesalat','Frokost','150 g kikærter, drænet · 120 g tomat · 100 g agurk · 10 g olie','Skyl kikærter og bland med hakket grønt og olie.'),
+ dish('Kylling på rugbrød med grønt','Frokost','70 g rugbrød · 100 g kylling · 50 g salat · 50 g tomat','Tilbered kylling og læg den på rugbrød med grønt.'),
+ dish('Rugbrødsmadder med makrel og grønt','Frokost','80 g rugbrød · 100 g makrel i tomat · 100 g agurk','Anret makrel og agurk på rugbrød.'),
+ dish('Hjemmelavet linsesalat','Frokost','150 g kogte linser · 100 g tomat · 100 g agurk · 10 g olie','Bland linser og grønt med olie.'),
+ dish('Fuldkornspasta med tomat og bønner','Frokost','70 g fuldkornspasta, tør vægt · 120 g kidneybønner, drænet · 120 g tomat','Kog pasta og vend med bønner og tomat.'),
+ dish('Kylling med grønt og kartofler','Frokost','100 g kylling · 150 g kartofler · 75 g broccoli · 75 g gulerod','Steg kyllingen gennem, tilbered kartoflerne og servér med grønt.')
+];
+const dinners=[
+ dish('Kylling med kartofler og broccoli','Aftensmad','140 g kyllingebryst · 200 g kartofler · 200 g broccoli · 10 g olie','Steg kylling og tilbered kartofler og broccoli.'),
+ dish('Laks med fuldkornsris og grønt','Aftensmad','140 g laks · 65 g fuldkornsris, tør vægt · 100 g broccoli · 100 g gulerod','Bag laks, kog ris og servér med grønt.'),
+ dish('Kalkungryde med grøntsager','Aftensmad','140 g kalkun · 65 g fuldkornsris, tør vægt · 100 g broccoli · 100 g gulerod · 10 g olie','Steg kalkun og grønt. Servér med kogte ris.'),
+ dish('Fisk med kartofler og gulerødder','Aftensmad','150 g hvid fisk · 200 g kartofler · 200 g gulerødder · 10 g olie','Bag fisk og servér med kartofler og gulerødder.'),
+ dish('Bønnegryde med ris og grøntsager','Aftensmad','180 g kidneybønner, drænet · 65 g fuldkornsris, tør vægt · 100 g broccoli · 100 g gulerod','Lad bønner simre med grøntsager og servér med ris.'),
+ dish('Kylling med ovngrønt','Aftensmad','140 g kyllingebryst · 220 g rodfrugter · 150 g kartofler · 10 g olie','Bag kylling og grøntsager, til kyllingen er gennemstegt.'),
+ dish('Oksekød med grøntsager og fuldkornspasta','Aftensmad','120 g magert oksekød · 65 g fuldkornspasta, tør vægt · 100 g broccoli · 100 g gulerod','Steg kødet grundigt og servér med pasta og grønt.')
+];
+const vegetables=[
+ dish('Gulerod og agurk','Formiddag','100 g gulerod · 100 g agurk','Skær grøntsager i stave.'),
+ dish('Peberfrugt og tomater','Formiddag','100 g peberfrugt · 100 g tomater','Skyl og skær grøntsagerne.'),
+ dish('Gulerødder med kikærtemos','Formiddag','150 g gulerod · 36 g kikærter, drænet · 4 g olie','Mos kikærter med olie og servér til grøntsagsstavene.'),
+ dish('Agurk og cherrytomater','Formiddag','100 g agurk · 100 g cherrytomater','Skyl og skær grøntsagerne.'),
+ dish('Peberfrugt med kikærtemos','Formiddag','150 g peberfrugt · 36 g kikærter, drænet · 4 g olie','Mos kikærter med olie og servér til grøntsagsstavene.'),
+ dish('Gulerod og tomat','Formiddag','120 g gulerod · 100 g tomat','Skyl og snit grøntsagerne.'),
+ dish('Grøntsagsstave','Formiddag','100 g gulerod · 100 g agurk','Skær grøntsager i stave.')
+];
+const afternoon=[
+ dish('Æble og mandler','Eftermiddag','120 g æble · 20 g mandler','Spis frugt og mandler sammen.'),
+ dish('Pære og kerner','Eftermiddag','130 g pære · 20 g græskarkerner','Servér sammen.'),
+ dish('Banan og valnødder','Eftermiddag','100 g banan · 20 g valnødder','Servér sammen.'),
+ dish('Appelsin og mandler','Eftermiddag','150 g appelsin · 20 g mandler','Servér sammen.'),
+ dish('Æble med peanutbutter','Eftermiddag','120 g æble · 20 g peanutbutter','Servér æblebåde med peanutbutter.'),
+ dish('Bær med kerner','Eftermiddag','125 g bær · 20 g græskarkerner','Servér sammen.'),
+ dish('Pære og mandler','Eftermiddag','130 g pære · 20 g mandler','Servér sammen.')
+];
+const evening=[
+ dish('Knækbrød med avocado','Aftenmåltid','20 g knækbrød · 60 g avocado','Servér avocado på knækbrød.'),
+ dish('Banan med mandler','Aftenmåltid','100 g banan · 15 g mandler','Servér sammen.'),
+ dish('Rugbrød med kikærtemos','Aftenmåltid','40 g rugbrød · 40 g kikærter, drænet · 5 g olie','Mos kikærter med olie og fordel på rugbrød.'),
+ dish('Æble og valnødder','Aftenmåltid','120 g æble · 15 g valnødder','Servér sammen.'),
+ dish('Knækbrød med peanutbutter','Aftenmåltid','20 g knækbrød · 20 g peanutbutter','Smør peanutbutter på knækbrød.'),
+ dish('Bær med mandler','Aftenmåltid','125 g bær · 20 g mandler','Servér sammen.'),
+ dish('Rugbrød med avocado','Aftenmåltid','40 g rugbrød · 60 g avocado','Servér avocado på rugbrød.')
+];
+function selectedDrink(row,key){
+ if(row.drink_record&&Object.prototype.hasOwnProperty.call(row.drink_record,key))return row.drink_record[key]===true;
+ const aliases=key==='alcohol'?['alcohol','alkohol','alcohol[]','alkohol[]','wine','vin']:['coffee','kaffe'];
+ for(const name of aliases){
+  if(Object.prototype.hasOwnProperty.call(row,name)){
+   if(row[name]===null||row[name]===undefined)continue;
+   const value=String(row[name]).trim().toLowerCase();
+   if(['true','1','ja','yes','on'].includes(value))return true;
+   if(['false','0','nej','no','off',''].includes(value))return false;
+   throw new Error('Ukendt valg for '+key+': '+value+'. Ret kundens oplysninger.');
+  }
+ }
+ return false;
+}
+function drinkControl(row,key){
+ let value;
+ try{value=selectedDrink(row,key)?'yes':'no'}catch(error){value='unknown'}
+ return '<select class="drink-select" aria-label="'+labels[key]+' for '+escapeHtml(row.name||'kunde')+'" data-key="'+key+'" data-id="'+escapeHtml(row.id)+'">'+[['unknown','Skal afklares'],['no','Nej'],['yes',key==='alcohol'?'Ja – 2 glas vin/uge':'Ja – kaffe med mælk']].map(([v,label])=>'<option value="'+v+'" '+(value===v?'selected':'')+'>'+label+'</option>').join('')+'</select>';
+}
+function adaptDish(item,row){
+ if(!allergyInfo(row).values.includes('Gluten'))return [...item];
+ let result=[...item];
+ const replacements=[[/rugbrødsmadder/gi,'Riskiks med pålæg'],[/rugbrød/gi,'riskiks'],[/fuldkornspasta, tør vægt/gi,'fuldkornsris, tør vægt'],[/fuldkornspasta/gi,'fuldkornsris'],[/knækbrød/gi,'riskiks'],[/havregryn/gi,'glutenfri havregryn'],[/havregrød/gi,'Glutenfri havregrød']];
+ result=result.map((value,index)=>[0,3,4].includes(index)?replacements.reduce((text,[pattern,replacement])=>text.replace(pattern,replacement),value):value);
+ // FCDB's havregryn er en ernæringsmæssig reference; det indkøbte produkt skal være mærket glutenfri.
+ return result;
+}
+function parseIngredient(text){
+ const match=String(text).trim().match(/^(\d+(?:[.,]\d+)?)\s*(g|ml)\s+(.+)$/i);
+ if(!match)throw new Error('Ingrediens mangler målt mængde: '+text);
+ const amount=Number(match[1].replace(',','.'));
+ const unit=match[2].toLowerCase();
+ const name=match[3].trim().toLowerCase();
+ if(!(amount>0))throw new Error('Ugyldig mængde: '+text);
+ if(unit==='ml'&&!['vand','vin','kaffe'].includes(name))throw new Error('Manglende gramvægt for '+text);
+ const key=name==='glutenfri havregryn'?'havregryn':name;
+ const food=FCDB[key];
+ if(!food||!Number.isFinite(food.kcal))throw new Error('FCDB-match mangler for '+text+'. Ret opskriften før PDF.');
+ // Vand: 0 kcal. Vin/kaffe: 1 ml ≈ 1 g, eksplicit skøn for volumen.
+ return {amount,unit,name,foodId:food.id,sourceName:food.name,kcal:amount*food.kcal/100};
+}
+function calculatePlan(plan){
+ for(const day of plan.days){
+  for(const item of day.items){
+   const components=item[3].split(' · ').map(parseIngredient);
+   item[2]=components.reduce((sum,c)=>sum+c.kcal,0);
+   if(!Number.isFinite(item[2]))throw new Error('Kunne ikke beregne '+item[0]);
+  }
+  day.extraKcal=0;
+  day.extraDetails=[];
+  for(const extra of day.extras){
+   let ingredients=[];
+   if(extra.includes('krus kaffe'))ingredients=['200 ml kaffe','100 g minimælk'];
+   if(extra.includes('glas vin'))ingredients=['125 ml vin'];
+   if(extra.startsWith('Lørdagsdessert:'))ingredients=['25 g chokolade'];
+   const kcal=ingredients.map(parseIngredient).reduce((sum,c)=>sum+c.kcal,0);
+   day.extraKcal+=kcal;
+   day.extraDetails.push({label:extra,kcal});
+  }
+  day.total=day.items.reduce((sum,item)=>sum+item[2],0)+day.extraKcal;
+  // Tilpas målte madportioner til kundens energimål. Drikke og grøntsager bevares.
+  const fixed=new Set(['vand','kaffe','vin','minimælk','tomat','tomater','cherrytomater','agurk','salat','broccoli','gulerod','gulerødder','peberfrugt','spinat','rodfrugter']);
+  let variable=0;
+  for(const item of day.items)for(const piece of item[3].split(' · ')){
+   const c=parseIngredient(piece);
+   if(!fixed.has(c.name))variable+=c.kcal;
+  }
+  const factor=(plan.target-(day.total-variable))/variable;
+  if(!Number.isFinite(factor)||factor<0.55||factor>2.2)throw new Error('Energimålet '+plan.target+' kcal kan ikke nås med denne dags menu ('+day.day+'). Tilpas opskrifterne.');
+  for(const item of day.items){
+   item[3]=item[3].split(' · ').map(piece=>{
+    const c=parseIngredient(piece);
+    return fixed.has(c.name)?piece:Math.max(1,Math.round(c.amount*factor))+' '+c.unit+' '+c.name;
+   }).join(' · ');
+   item[2]=item[3].split(' · ').map(parseIngredient).reduce((sum,c)=>sum+c.kcal,0);
+  }
+  day.total=day.items.reduce((sum,item)=>sum+item[2],0)+day.extraKcal;
+ }
+ // Opskriftoversigten skal vise de samme portionsmængder som på de enkelte dage.
+ plan.recipes=plan.days.flatMap(day=>day.items).filter((item,i,all)=>all.findIndex(other=>other[0]===item[0]&&other[3]===item[3])===i);
+ plan.calculatedSource='FCDB 6.1';
+ return plan;
+}
+function makePlan(row){
+ const count=Number(row.meals),target=Number(row.calories);
+ if(![4,5,6].includes(count))throw new Error('Vælg 4, 5 eller 6 måltider pr. dag.');
+
+ requireAllergyCheck(row);
+ const chosen=days.map((day,di)=>{
+   const items=[breakfasts[di],vegetables[di],lunches[di]];
+   if(count>=5)items.push(afternoon[di]);
+   items.push(dinners[di]);
+   if(count===6)items.push(evening[di]);
+   const extras=[];
+   if(selectedDrink(row,'coffee'))extras.push('1 krus kaffe med 100 g minimælk');
+   if(selectedDrink(row,'alcohol')&&[4,5].includes(di))extras.push('1 glas vin, ca. 125 ml');
+   if(di===5)extras.push(allergyInfo(row).values.includes('Gluten')?'Lørdagsdessert: 25 g chokolade mærket glutenfri':'Lørdagsdessert: 25 g chokolade');
+   return {day,items:items.map(item=>adaptDish(item,row)),extras,total:null};
+ });
+ return calculatePlan({target,count,days:chosen,recipes:chosen.flatMap(x=>x.items).filter((x,i,a)=>a.findIndex(y=>y[0]===x[0])===i),created:new Date().toISOString(),version:PLAN_VERSION,profileSignature:profileSignature(row),allergies:allergyInfo(row).values});
+}
+function openPlan(row){requireAllergyCheck(row);if(row.plan&&(row.plan.version!==PLAN_VERSION||row.plan.profileSignature!==profileSignature(row)))throw new Error('Planens kundevalg er ændret. Vælg Generer igen.');const plan=row.plan||makePlan(row);if(plan.days.some(d=>!Number.isFinite(d.total)))throw new Error('Planen mangler kcal. Vælg Generer igen.');notice('Kcal beregnet med FCDB 6.1. Planen er ikke baseret på verificerede tilbud fra Netto endnu.');const esc=escapeHtml;const overview=plan.days.map(d=>'<tr><th>'+esc(d.day)+'</th>'+d.items.map(x=>'<td>'+esc(x[0])+'<br><small>'+Math.round(x[2])+' kcal</small>'+(x[1]==='Aftensmad'&&d.extras.some(e=>e.includes('glas vin'))?'<br><b>+ 1 glas vin (125 ml)</b>':'')+'</td>').join('')+'<td><b>'+Math.round(d.total)+' kcal</b><br><small>inkl. drikke/ekstra</small></td></tr>').join('');const extras=plan.days.map(d=>d.extras.length?'<p><b>'+esc(d.day)+':</b> '+d.extraDetails.map(e=>esc(e.label)+' ('+Math.round(e.kcal)+' kcal)').join(' · ')+'</p>':'').join('');const recipePages=[];for(let i=0;i<plan.recipes.length;i+=3)recipePages.push(plan.recipes.slice(i,i+3).map((x,j)=>'<article><h3>'+(i+j+1)+'. '+esc(x[0])+'</h3><p class="meta">'+esc(x[1])+' · '+Math.round(x[2])+' kcal (FCDB 6.1)</p><p><b>Ingredienser:</b> '+esc(x[3])+'</p><p><b>Fremgangsmåde:</b> '+esc(x[4])+'</p></article>').join(''));const portions=plan.days.flatMap(d=>d.items.flatMap(item=>item[3].split(' · ')));
+for(const day of plan.days){
+ for(const extra of day.extras){
+  if(extra.includes('krus kaffe'))portions.push('100 g minimælk','200 ml kaffe');
+  if(extra.includes('glas vin'))portions.push('125 ml vin');
+  if(extra.startsWith('Lørdagsdessert:'))portions.push(extra.replace('Lørdagsdessert: ',''));
+ }
+}
+const portionsCount=new Map();
+for(const ingredient of portions)portionsCount.set(ingredient,(portionsCount.get(ingredient)||0)+1);
+const entries=[...portionsCount].sort((a,b)=>a[0].localeCompare(b[0],'da'));
+const shopping='<div class="shop">'+[entries.slice(0,Math.ceil(entries.length/2)),entries.slice(Math.ceil(entries.length/2))].map(group=>'<div><h3>Ingredienser</h3>'+group.map(([name,count])=>'<p>'+count+' × '+esc(name)+'</p>').join('')+'</div>').join('')+'</div>' ;const pages='<section class="page"><h1>DIN UGEPLAN</h1><p class="subtitle">Personlig kostplan med fokus på '+esc(row.goal==='muscle_gain'?'energi, styrke og en enkel hverdag':'en enkel og overskuelig hverdag')+'</p><div class="facts"><span><small>Mål</small>'+esc(pretty[row.goal]||row.goal)+'</span><span><small>Ønsket mål</small>'+plan.target+' kcal pr. dag</span><span><small>Måltider</small>'+plan.count+' dagligt</span><span><small>Periode</small>7 dage</span></div><h2>Ugens overblik</h2><table class="overview"><thead><tr><th>Dag</th>'+Array.from({length:plan.count},(_,i)=>'<th>Måltid '+(i+1)+'</th>').join('')+'<th>Beregnet kcal</th></tr></thead><tbody>'+overview+'</tbody></table><h2>Drikke og weekend</h2><p>'+esc(selectedDrink(row,'alcohol')?'Vin: 2 glas i alt – 1 glas (125 ml) fredag og 1 glas (125 ml) lørdag.':'Vin: fravalgt.')+'</p>'+extras+'<div class="tip"><b>Tip til hverdagen</b><span>Fordel måltiderne efter din hverdag. Drik vand efter tørst.</span></div><p class="note">Dette er en prøveplan; ingredienserne er ikke valgt ud fra verificerede Netto-tilbud. Kcal er beregnet fra FCDB 6.1 pr. 100 g og afrundet ved visning. Dagene er tilpasset '+plan.target+' kcal. Nærmeste FCDB-reference er brugt for fuldkornspasta og glutenfri havre; kontrollér varedeklarationerne. '+esc(allergyLabel(row))+'</p>'+(plan.allergies.includes('Gluten')?'<p><b>Glutenfri plan – alle 7 dage.</b> Vælg havre mærket glutenfri, og kontrollér mærkning på de øvrige varer. Brug rent køkkenudstyr og undgå kontakt med glutenholdige fødevarer. Vælg kød og fisk uden panering eller marinade med gluten. Følg glutenfri produktvalg i opskrifterne og indkøbslisten. <a href="https://foedevarestyrelsen.dk/kost-og-foedevarer/maerkning-og-markedsfoering-af-foedevarer/frivillig-foedevareinformation/glutenfri-">Om glutenfri mærkning</a>.</p>':'')+'</section>'+recipePages.map(x=>'<section class="page"><h1>OPSKRIFTER OG MÆNGDER</h1><p class="subtitle">Alle mængder er beregnet til 1 person.</p>'+x+'</section>').join('')+'<section class="page"><h1>SAMLET INDKØBSLISTE</h1><p class="subtitle">Opskriftsmængder for hele ugen. Identiske linjer er samlet; tilbudsvarer, indkøbspakker og priser er ikke verificeret mod Netto-avisen.</p>'+shopping+'<div class="tip"><b>Privatliv</b><span>Oplysningerne bruges kun til at udarbejde og sende din kostplan.</span></div></section>';const output='<!doctype html><html lang="da"><head><meta charset="utf-8"><title>Personlig kostplan - '+esc(row.name)+'</title><style>@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;background:#eee;font:10px Arial;color:#24342f}.page{width:210mm;min-height:297mm;background:#fff;padding:20mm 15mm 18mm;margin:0 auto 8mm;page-break-after:always;position:relative}h1{color:#356557;letter-spacing:7px;font-size:24px;margin:0 0 5px}h2{color:#356557;letter-spacing:2px;margin:22px 0 10px;font-size:16px}.subtitle{color:#718078;font-size:11px;margin:0 0 18px}.facts{display:flex;background:#e8f1eb;margin-bottom:23px}.facts span{flex:1;padding:10px;border-right:1px solid #d2e0d6}.facts small{display:block;color:#718078;letter-spacing:2px;margin-bottom:6px}.overview{border-collapse:collapse;width:100%;table-layout:fixed}.overview th,.overview td{border:1px solid #d2e0d6;padding:8px 6px;text-align:left;vertical-align:top;word-break:normal}.overview thead th{background:#356557;color:#fff;font-weight:400}.overview tbody th{color:#356557;background:#f7f5ee}.overview tbody tr:nth-child(even) td{background:#f7f5ee}.tip{display:flex;border:1px solid #e9c6a3;background:#fff4ec;padding:11px;margin-top:20px;gap:26px}.tip b{color:#356557;min-width:105px}.note{color:#718078;margin-top:24px}article{border-bottom:1px solid #d9e5dd;padding:0 0 12px;margin:0 0 14px;line-height:1.45}article h3{color:#356557;margin:0 0 4px;font-size:13px}.meta{color:#b16c37;margin:0 0 6px}.shop{display:grid;grid-template-columns:1fr 1fr;border:1px solid #d9e5dd;background:#f7f5ee}.shop>div{padding:14px;border-right:1px solid #d9e5dd}.shop h3{color:#356557;margin:0 0 7px}.shop p{line-height:1.2;margin:0 0 3px;font-size:9px}@media print{body{background:#fff}.page{margin:0}}@media screen{body:before{content:"Brug Ctrl+P og vælg Gem som PDF";display:block;text-align:center;padding:12px;background:#356557;color:white;font-weight:bold}}</style></head><body>'+pages+'</body></html>';showPreview(output,row,plan);return output}
+function showPreview(output,row,plan){const box=document.querySelector('#preview');box.innerHTML='';const title=document.createElement('div');title.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';const label=document.createElement('strong');label.textContent='Kostplan klar - gennemse den herunder';const frame=document.createElement('iframe');frame.srcdoc=output;const print=document.createElement('button');print.textContent='Udskriv eller gem som PDF';print.onclick=()=>{try{const latest=readRows().find(x=>String(x.id)===String(row.id));if(!latest||profileSignature(latest)!==plan.profileSignature)throw new Error('Kundeoplysningerne er ændret. Generer en ny plan før PDF.');requireAllergyCheck(latest);frame.contentWindow.print()}catch(error){box.innerHTML='';notice(error.message,true)}};title.append(label,print);box.append(title,frame)}
+
+const columns=[['name','Navn'],['status','Status'],['allergy','Allergier'],['alcohol','Alkohol'],['plan','Kostplan'],['email','E-mail'],['age','Alder'],['height','Højde'],['weight','Vægt'],['activity','Aktivitet'],['goal','Mål'],['calories','Kalorier'],['meals','Måltider'],['coffee','Kaffe'],['submitted_at','Modtaget']];
+function render(){
+ const content=document.querySelector('#content');content.replaceChildren();
+ document.querySelector('#count').textContent=rows.length+' indsendelse(r) i databasen (maks. 200 vises)';
+ if(!rows.length){const p=document.createElement('div');p.className='empty';p.textContent='Ingen testbesvarelser endnu. Åbn landingpage, og send en fiktiv testbesvarelse.';content.append(p);return}
+ const wrap=document.createElement('div');wrap.className='table-wrap';const table=document.createElement('table');
+ const thead=document.createElement('thead'),hr=document.createElement('tr');
+ for(const [,title] of columns){const th=document.createElement('th');th.textContent=title;hr.append(th)}thead.append(hr);table.append(thead);
+ const body=document.createElement('tbody');
+ for(const row of rows){const tr=document.createElement('tr');
+  for(const [key] of columns){const td=document.createElement('td');
+   if(key==='name')td.className='name';
+   if(key==='status'){
+    const select=document.createElement('select');select.className='status';select.setAttribute('aria-label','Status for '+row.name);
+    for(const [value,label] of [['received','Modtaget'],['ready','Kostplan genereret'],['completed','Kostplan sendt']]){const option=document.createElement('option');option.value=value;option.textContent=label;select.append(option)}
+    select.value=['ready','completed'].includes(row.status)?row.status:'received';
+    select.addEventListener('change',async()=>{
+      const next=select.value;select.disabled=true;
+      try{
+       if(['ready','completed'].includes(next)){
+        requireAllergyCheck(row);
+        if(!row.plan||row.plan.version!==PLAN_VERSION||row.plan.profileSignature!==profileSignature(row))throw new Error('Generer og gennemse kostplanen, før du vælger denne status.');
+        if(row.plan.days.some(d=>!Number.isFinite(d.total)))throw new Error('Planen mangler beregnede kcal.');
+       }
+       if(next==='completed'&&!confirm('Er kostplanen faktisk sendt manuelt? Statusknappen sender ikke e-mail.')){select.value=row.status;return}
+       await patchRow(row,{status:next});notice('Status gemt i databasen.')
+      }catch(error){select.value=row.status;notice(error.message,true)}finally{select.disabled=false}
+    });td.append(select)
+   }else if(key==='allergy'){
+    const info=allergyInfo(row),select=document.createElement('select');
+    const value=!info.known?'unknown':info.values.length?info.values.join('|'):'none';
+    for(const [v,label] of [['unknown','Skal afklares'],['none','Ingen allergier oplyst'],['Gluten','Gluten'],['Laktose','Laktose'],['Gluten|Laktose','Gluten og laktose']]){const o=document.createElement('option');o.value=v;o.textContent=label;select.append(o)}select.value=value;
+    select.setAttribute('aria-label','Allergier for '+row.name);
+    select.addEventListener('change',async()=>{
+     select.disabled=true;document.querySelector('#preview').replaceChildren();
+     try{await patchRow(row,{allergy_record:{known:select.value!=='unknown',values:['none','unknown'].includes(select.value)?[]:select.value.split('|'),updated_at:new Date().toISOString()},plan:null,status:'received'});notice('Allergivalget er gemt. Generer en ny plan efter ændringen.');render()}
+     catch(error){select.value=value;notice('Kunne ikke gemme allergier: '+error.message,true)}finally{select.disabled=false}
+    });td.append(select)
+   }else if(key==='plan'){
+    td.className='action-cell';const div=document.createElement('div');div.className='actions';
+    const make=document.createElement('button');make.textContent='Generer kostplan';make.onclick=()=>generate(row,make);div.append(make);
+    if(row.plan){const pdf=document.createElement('button');pdf.className='secondary';pdf.textContent='Åbn PDF';pdf.onclick=()=>viewPlan(row);div.append(pdf)}td.append(div)
+   }else if(key==='alcohol'){
+    const select=document.createElement('select');for(const [v,label] of [['nej','Nej'],['ja','Ja – 2 glas vin/uge']]){const o=document.createElement('option');o.value=v;o.textContent=label;select.append(o)}select.value=row.alcohol;
+    select.setAttribute('aria-label','Alkohol for '+row.name);
+    select.onchange=async()=>{select.disabled=true;document.querySelector('#preview').replaceChildren();try{await patchRow(row,{alcohol:select.value,drink_record:null,plan:null,status:'received'});notice('Alkoholvalg gemt. Generer en ny plan efter ændringen.');render()}catch(error){select.value=row.alcohol;notice(error.message,true)}finally{select.disabled=false}};td.append(select)
+   }else{let value=row[key];if(key==='submitted_at')value=new Date(value).toLocaleString('da-DK');else if(key==='coffee')value=row.coffee==='ja'?'Ja, med mælk':'Nej';else value=display(value);td.textContent=String(value??'–')}
+   tr.append(td)
+  }body.append(tr)
+ }
+ table.append(body);wrap.append(table);content.append(wrap)
+}
+async function generate(row,button){
+ const previewBox=document.querySelector('#preview');previewBox.replaceChildren();button.disabled=true;
+ try{
+  const plan=makePlan(row);
+  await patchRow(row,{plan,status:'ready'});
+  render();openPlan(row);
+ }catch(error){notice('Kostplanen kunne ikke genereres: '+error.message,true)}finally{button.disabled=false}
+}
+function viewPlan(row){document.querySelector('#preview').replaceChildren();try{openPlan(row)}catch(error){notice(error.message,true)}}
+document.querySelector('#login-form').addEventListener('submit',async event=>{
+ event.preventDefault();notice('');const button=event.target.querySelector('button');button.disabled=true;
+ try{
+  const response=await fetch(PROJECT_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:PUBLISHABLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:document.querySelector('#email').value,password:document.querySelector('#password').value})});
+  if(!response.ok)throw new Error('Tjek e-mail og adgangskode.');token=(await response.json()).access_token;
+  const allowed=await api('/rest/v1/rpc/is_kostplan_admin',{method:'POST',body:'{}'});if(allowed!==true)throw new Error('Denne bruger har ikke administratoradgang.');
+  document.querySelector('#password').value='';document.querySelector('#login-panel').hidden=true;document.querySelector('#dashboard').hidden=false;await loadRows();
+ }catch(error){token=null;document.querySelector('#login-panel').hidden=false;document.querySelector('#dashboard').hidden=true;notice(error.message,true)}finally{button.disabled=false}
 });
-function field(label,value){const dt=document.createElement('dt');dt.textContent=label;const dd=document.createElement('dd');dd.textContent=Array.isArray(value)?(value.join(', ')||'Ingen'):(friendly[value]||String(value??''));return [dt,dd]}
-async function loadAnswers(){
-  try{
-    const rows=await api('/rest/v1/kostplan_submissions?select=*&order=submitted_at.desc&limit=200');
-    const area=document.querySelector('#answers');area.replaceChildren();
-    document.querySelector('#count').textContent=rows.length+' testbesvarelser (maks. 200 vises)';
-    if(!rows.length){const p=document.createElement('p');p.textContent='Ingen testbesvarelser endnu.';area.append(p)}
-    for(const row of rows){
-      const card=document.createElement('article');card.className='answer';
-      const title=document.createElement('h2');title.textContent=row.name;card.append(title);
-      const time=document.createElement('time');time.textContent=new Date(row.submitted_at).toLocaleString('da-DK');card.append(time);
-      const dl=document.createElement('dl');
-      for(const [key,label] of Object.entries(labels))dl.append(...field(label,row[key]));card.append(dl);
-      const label=document.createElement('label');label.textContent='Status';
-      const select=document.createElement('select');
-      for(const [value,text] of [['received','Modtaget'],['working','Under behandling'],['done','Afsluttet']]){
-        const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option)
-      }
-      select.value=row.status;select.addEventListener('change',async()=>{
-        select.disabled=true;
-        try{await api('/rest/v1/kostplan_submissions?id=eq.'+encodeURIComponent(row.id),{method:'PATCH',body:JSON.stringify({status:select.value}),headers:{Prefer:'return=minimal'}});row.status=select.value;show('Status er gemt.')}
-        catch(error){select.value=row.status;show('Status kunne ikke gemmes: '+error.message,true)}
-        finally{select.disabled=false}
-      });label.append(select);card.append(label);area.append(card)
-    }
-  }catch(error){show('Kunne ikke hente besvarelser: '+error.message,true)}
-}
-document.querySelector('#refresh').addEventListener('click',loadAnswers);
-document.querySelector('#logout').addEventListener('click',()=>{token=null;document.querySelector('#dashboard').hidden=true;document.querySelector('#login-panel').hidden=false;document.querySelector('#answers').replaceChildren();show('Du er logget ud.')});
+document.querySelector('#refresh').addEventListener('click',loadRows);
+document.querySelector('#logout').addEventListener('click',()=>{token=null;rows=[];document.querySelector('#preview').replaceChildren();document.querySelector('#content').replaceChildren();document.querySelector('#dashboard').hidden=true;document.querySelector('#login-panel').hidden=false;notice('Du er logget ud.')});
+
 </script></body></html>
