@@ -24,7 +24,7 @@ async function loadRows(){
  catch(error){notice('Kunne ikke hente besvarelser: '+error.message,true)}
 }
 const labels={name:'Navn',email:'E-mail',age:'Alder',height:'Højde',weight:'Vægt',activity:'Aktivitet',goal:'Mål',calories:'Kalorier',meals:'Måltider',supermarket:'Supermarked',allergy:'Allergier',coffee:'Kaffe',alcohol:'Alkohol',submitted_at:'Modtaget',status:'Status'};
-const pretty={low:'Lavt',moderate:'Middel',high:'Højt',weight_loss:'Vægttab',muscle_gain:'Muskelopbygning',maintain:'Vedligehold',rema_1000:'REMA 1000',netto:'Netto',lidl:'Lidl',coop365:'Coop 365',received:'Modtaget',in_progress:'Modtaget',ready:'Kostplan genereret',completed:'Kostplan sendt',1:'Ja',0:'Nej'};
+const pretty={low:'Lavt',moderate:'Middel',high:'Højt',weight_loss:'Vægttab',muscle_gain:'Muskelopbygning',maintain:'Vedligehold',healthy:'Sund livsstil',rema_1000:'REMA 1000',netto:'Netto',lidl:'Lidl',coop365:'Coop 365',received:'Modtaget',in_progress:'Modtaget',ready:'Kostplan genereret',completed:'Kostplan sendt',1:'Ja',0:'Nej'};
 function display(value){if(Array.isArray(value))return value.join(', ');return pretty[value]||value||'–'}
 function escapeHtml(value){return String(value).replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]))}
 function allergyInfo(row){
